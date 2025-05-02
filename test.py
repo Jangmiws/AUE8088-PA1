@@ -23,7 +23,10 @@ if __name__ == "__main__":
     args.add_argument('--ckpt_file',
         type = str,
         help = 'Model checkpoint file name')
+    args.add_argument('--model_name', type=str, default=cfg.MODEL_NAME, help='Model architecture name')
     args = args.parse_args()
+    
+    cfg.MODEL_NAME = args.model_name
 
     model = SimpleClassifier(
         model_name = cfg.MODEL_NAME,
@@ -49,5 +52,7 @@ if __name__ == "__main__":
     x, y = next(iter(datamodule.test_dataloader()))
     flop_counter = FlopCounterMode(model, depth=1)
 
-    with flop_counter:
+    model.eval()
+    
+    with torch.no_grad(), flop_counter:
         model(x)

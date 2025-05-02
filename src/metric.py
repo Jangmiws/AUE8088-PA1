@@ -1,10 +1,6 @@
 from torchmetrics import Metric
 import torch
 
-# [TODO] Implement this!
-class MyF1Score(Metric):
-    pass
-
 class MyAccuracy(Metric):
     def __init__(self):
         super().__init__()
@@ -13,13 +9,13 @@ class MyAccuracy(Metric):
 
     def update(self, preds, target):
         # [TODO] The preds (B x C tensor), so take argmax to get index with highest confidence
-
+        preds = torch.argmax(preds, dim=1)
 
         # [TODO] check if preds and target have equal shape
-
+        assert preds.shape == target.shape, "Predictions and targets must have the same shape"
 
         # [TODO] Cound the number of correct prediction
-
+        correct = (preds == target).sum()
 
         # Accumulate to self.correct
         self.correct += correct
@@ -29,3 +25,41 @@ class MyAccuracy(Metric):
 
     def compute(self):
         return self.correct.float() / self.total.float()
+
+
+
+
+class MyF1Score(Metric):
+    def __init__(self, num_classes):
+        super().__init__()
+        self.num_classes = num_classes
+        self.add_state('true_positives', default=torch.zeros(num_classes), dist_reduce_fx='sum')
+        self.add_state('false_positives', default=torch.zeros(num_classes), dist_reduce_fx='sum')
+        self.add_state('false_negatives', default=torch.zeros(num_classes), dist_reduce_fx='sum')
+
+    def update(self, preds, target):
+        # preds: (batch_size, num_classes)
+        preds = torch.argmax(preds, dim=1)
+
+        for cls in range(self.num_classes):
+            # True Positive: 예측도 cls, 정답도 cls
+            tp = ((preds == cls) & (target == cls)).sum()
+
+            # False Positive: 예측은 cls인데 정답은 아님
+            fp = ((preds == cls) & (target != cls)).sum()
+
+            # False Negative: 정답은 cls인데 예측은 아님
+            fn = ((preds != cls) & (target == cls)).sum()
+
+            self.true_positives[cls] += tp
+            self.false_positives[cls] += fp
+            self.false_negatives[cls] += fn
+
+    def compute(self):
+        precision = self.true_positives / (self.true_positives + self.false_positives + 1e-8)
+        recall = self.true_positives / (self.true_positives + self.false_negatives + 1e-8)
+        f1 = 2 * precision * recall / (precision + recall + 1e-8)
+
+        
+        return f1
+    

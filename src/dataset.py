@@ -89,3 +89,7 @@ class TinyImageNetDatasetModule(LightningDataModule):
             num_workers=cfg.NUM_WORKERS,
             batch_size=self.batch_size,
         )
+
+if __name__=="__main__":
+    dataset = TinyImageNetDatasetModule()
+    dataset.prepare_data()
