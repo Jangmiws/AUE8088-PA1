@@ -42,13 +42,13 @@ class MyF1Score(Metric):
         preds = torch.argmax(preds, dim=1)
 
         for cls in range(self.num_classes):
-            # True Positive: 예측도 cls, 정답도 cls
+            # True Positive
             tp = ((preds == cls) & (target == cls)).sum()
 
-            # False Positive: 예측은 cls인데 정답은 아님
+            # False Positive
             fp = ((preds == cls) & (target != cls)).sum()
 
-            # False Negative: 정답은 cls인데 예측은 아님
+            # False Negative
             fn = ((preds != cls) & (target == cls)).sum()
 
             self.true_positives[cls] += tp
